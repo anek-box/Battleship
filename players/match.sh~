@@ -1,0 +1,6 @@
+../master/master -a &
+sleep 1
+./ex4 &
+sleep 1
+../sample/sweep &
+

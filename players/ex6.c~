@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <my-ipc.h>
 #include <client-side.h>
 #include <redundant.h>
@@ -11,51 +10,17 @@ const char DEPLOYMENT[61] = "Ba3a4a5a6 Cc1c2c3 Cc5c6c7 De1e2 De4e5 De7e8 Sg1 Sg3
 
 enum ship {
   UNKNOWN,
-  SUSPECT,
   NOSHIP,
+  ROCK,
   BSHIP,
   CSHIP,
   DSHIP,
-  SSHIP,
-  ROCK
-};
-enum direction{
-  UNKNOWNDIR,
-  COL,//yoko
-  ROW //tate
+  SSHIP
 };
 
 
-int cur_x=0,cur_y=0;
-enum ship enemy_board[BD_SIZE+2][BD_SIZE+2];   
-// BD_SIZE is 9 (defined in public.h)
-
-
-typedef struct{
-  char x;
-  char y;
-  enum ship ship;
-  enum direction dir;
-}Unsank;
-Unsank **unsank;
-int numunsank=0;
-
-//指定マスの上下左右をｓｈにセットする
-void set_board_crossy(enum ship sh, int x, int y){
-  int i, j,ittr;
-  for(ittr=1;ittr<9;ittr+=2){
-    i=ittr/3 - 1; j=ittr%3 - 1;
-    if(enemy_board[y+i][x+j] < sh)enemy_board[y+i][x+j] = sh;
-  }
-}
-//指定マスの周囲8マスをshにセット
-void set_board_around(enum ship sh, int x, int y){
-  int i, j,ittr;
-  for(ittr=0;ittr<9;ittr++){
-    i=ittr/3 - 1; j=ittr%3 - 1;
-    if(enemy_board[y+i][x+j] < sh)enemy_board[y+i][x+j] = sh;
-  }
-}
+int cur_x,cur_y;
+enum ship enemy_board[BD_SIZE+2][BD_SIZE+2];    // BD_SIZE is 9 (defined in public.h)
 
 void respond_with_name(void)
 {
@@ -104,25 +69,19 @@ enemy_board[1][1]=enemy_board[1][2]=enemy_board[2][1]=enemy_board[BD_SIZE][BD_SI
   //======kokomade======
 }
 
-enum ship aroundship(int x, int y){
-  enum ship ret;
-#define ISSHIP(x, y)			  \
-  do {					  \
-    ret=enemy_board[y+1][x+1];		  \
-    if(ret==BSHIP			  \
-       || ret==CSHIP			  \
-       || ret==DSHIP) return ret; }	  \
-  while(0)
+int IsShipAround(int x, int y){
+  
+#define ISSHIP(x, y)  if(enemy_board[y+1][x+1]==SSHIP) return 1
 
   ISSHIP(x-1,y-1);ISSHIP(x,y-1);ISSHIP(x+1,y-1);
   ISSHIP(x-1,y);  /* (^q^)  */  ISSHIP(x+1,y);
   ISSHIP(x-1,y+1);ISSHIP(x,y+1);ISSHIP(x+1,y+1);
 #undef ISSHIP
-  return UNKNOWN;
+  return 0;
 }
 
 void shotsalvo(int *retx, int *rety){
-  
+
 }
 void shotrattrap(int *retx, int *rety){
   
@@ -134,68 +93,25 @@ void shotrandom(int *retx, int *rety){
     x = rand() % BD_SIZE;
     y = rand() % BD_SIZE;
     
-    if(enemy_board[y+1][x+1]==UNKNOWN
-       || enemy_board[y+1][x+1]==SUSPECT) break;
+    if(enemy_board[y+1][x+1]==UNKNOWN && !IsShipAround(x,y)) break;
   }
   *retx = x, *rety = y;
 }
-
 void (*shotfunc)(int*, int*)=shotrandom;
 
-void shot_selecter(){
-
-
-}
 
 void respond_with_shot(void)
 {
   char shot_string[MSG_LEN];
   int x, y;
-  enum direction di = UNKNOWN;  
+  
   (*shotfunc)(&x, &y);
   
-  if(di){x=0;y=0;}
-
   printf("%s shooting at %d%d ... ", MY_NAME, x, y);
   sprintf(shot_string, "%d%d", x, y);
   send_to_ref(shot_string);
   cur_x = x;
   cur_y = y;
-}
-
-
-void pushunsank(enum ship sh, int x, int y){
-  unsank[numunsank] = (Unsank*)malloc(sizeof(Unsank));
-  unsank[numunsank]->x=x;
-  unsank[numunsank]->y=y;
-  unsank[numunsank]->ship=sh;
-  numunsank++;
-  set_board_crossy(SUSPECT,x,y);
-}
-void clearunsank(){
-  int i=0;
-  while(unsank[i]){
-    set_board_around(NOSHIP, unsank[i]->x, unsank[i]->y);
-    free(unsank[i]);
-    ++i;
-  }
-  numunsank=0;
-}
-
-void unsankmanage(){
-  switch(enemy_board[cur_y+1][cur_x+1]){
-  case BSHIP:
-    break;
-  case CSHIP:
-    //pushunsank(DSHIP, cur_x, cur_y);
-    break;
-  case DSHIP:
-    //if(!aroundship(cur_x,cur_y))pushunsank(DSHIP, cur_x, cur_y);
-    // else clearunsank();
-    break;
-  default:
-    return;
-  }
 }
 
 void record_result(int x,int y,char line[])
@@ -227,8 +143,7 @@ void record_result(int x,int y,char line[])
     int i,j;
     for(i=-1;i<2;++i){
       for(j=-1;j<2;++j){
-	if(enemy_board[y+1+i][x+1+j]==UNKNOWN)
-	  enemy_board[y+1+i][x+1+j] = NOSHIP;
+	if(enemy_board[y+1+i][x+1+j]==UNKNOWN)enemy_board[y+1+i][x+1+j] = NOSHIP;
       }
     }
     enemy_board[y+1][x+1]=SSHIP;
@@ -249,7 +164,6 @@ void record_result(int x,int y,char line[])
 
     //====kokomade====
   }
-  unsankmanage();
 }
 
 void print_board(void){

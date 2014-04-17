@@ -30,22 +30,27 @@ int cur_x=0,cur_y=0;
 enum ship enemy_board[BD_SIZE+2][BD_SIZE+2];   
 // BD_SIZE is 9 (defined in public.h)
 
+#define SET(a,b,c) do{						\
+    if(enemy_board[(c)+1][(b)+1] < a)enemy_board[(c)+1][(b)+1]=a;	\
+  }while(0)
 
 typedef struct{
   char x;
   char y;
   enum ship ship;
-  enum direction dir;
+  enum direction direction;
 }Unsank;
-Unsank **unsank;
+Unsank *unsank[4];
 int numunsank=0;
 
+
+//●●●●●●●●●●●●●●●●●ＳＥＴ●●●●●●●●●●●●●●●●●
 //指定マスの上下左右をｓｈにセットする
 void set_board_crossy(enum ship sh, int x, int y){
   int i, j,ittr;
   for(ittr=1;ittr<9;ittr+=2){
     i=ittr/3 - 1; j=ittr%3 - 1;
-    if(enemy_board[y+i][x+j] < sh)enemy_board[y+i][x+j] = sh;
+    if(enemy_board[y+i+1][x+j+1] < sh)enemy_board[y+i+1][x+j+1] = sh;
   }
 }
 //指定マスの周囲8マスをshにセット
@@ -53,9 +58,42 @@ void set_board_around(enum ship sh, int x, int y){
   int i, j,ittr;
   for(ittr=0;ittr<9;ittr++){
     i=ittr/3 - 1; j=ittr%3 - 1;
-    if(enemy_board[y+i][x+j] < sh)enemy_board[y+i][x+j] = sh;
+    if(enemy_board[y+i+1][x+j+1] < sh)enemy_board[y+i+1][x+j+1] = sh;
   }
 }
+//指定マスの上下または左右をセット ＊＊＊仕様を確定させてないので使わない
+/*void set_board_row_or_col(enum ship sh, int x, int y, enum direction dir, int overwriteflag){
+  if(dir==ROW){
+    if(enemy_board[y+2][x+1]==NOSHIP || enemy_board[y+2][x+1] < sh)enemy_board[y+2][x+1] = sh;
+    if(overwriteflag || enemy_board[y][x+1] < sh)enemy_board[y][x+1] = sh;
+  }else{
+    if(overwriteflag || enemy_board[y+1][x+2] < sh)enemy_board[y+1][x+2] = sh;
+    if(overwriteflag || enemy_board[y+1][x] < sh)enemy_board[y+1][x] = sh;
+  }
+  }*/
+
+//ボードの周囲から目標のshipのセルを探す。グルグル渦を巻いて中心に向かう
+int  search_spiral(enum ship sh, int offset, int *retx, int *rety){
+  int i,j;
+  for(;offset<BD_SIZE+1;offset++){
+    i=j=offset;
+
+    for(;j<BD_SIZE-offset;++j){
+      if(enemy_board[i+1][j+1]==sh){*retx=j,*rety=i;return 1;}
+    }
+    for(;i<BD_SIZE-offset;++i){
+      if(enemy_board[i+1][j+1]==sh){*retx=j,*rety=i;return 1;}
+    }
+    for(;j>=offset;--j){
+      if(enemy_board[i+1][j+1]==sh){*retx=j,*rety=i;return 1;}
+    }
+    for(;i>=offset;--i){
+      if(enemy_board[i+1][j+1]==sh){*retx=j,*rety=i;return 1;}
+    }
+  }
+  return 0;
+}
+
 
 void respond_with_name(void)
 {
@@ -139,22 +177,26 @@ void shotrandom(int *retx, int *rety){
   }
   *retx = x, *rety = y;
 }
+void shotsuspect(int *retx, int *rety){
+  int i=0,j=0;
+  search_spiral(SUSPECT, 0, &j, &i);
+  *retx=j;*rety=i;
+}
 
 void (*shotfunc)(int*, int*)=shotrandom;
 
-void shot_selecter(){
-
-
+void shotselecter(){
+  if(numunsank>0) shotfunc = shotsuspect;
+  else shotfunc = shotrandom;
 }
 
 void respond_with_shot(void)
 {
   char shot_string[MSG_LEN];
   int x, y;
-  enum direction di = UNKNOWN;  
-  (*shotfunc)(&x, &y);
   
-  if(di){x=0;y=0;}
+  shotselecter();
+  (*shotfunc)(&x, &y);  
 
   printf("%s shooting at %d%d ... ", MY_NAME, x, y);
   sprintf(shot_string, "%d%d", x, y);
@@ -164,34 +206,74 @@ void respond_with_shot(void)
 }
 
 
+//●●●●●●●●●●●●●●●●ＵＮＳＡＮＫ●●●●●●●●●●●●●●●●●
+
 void pushunsank(enum ship sh, int x, int y){
-  unsank[numunsank] = (Unsank*)malloc(sizeof(Unsank));
+  if((unsank[numunsank] = (Unsank*)malloc(sizeof(Unsank)))==NULL){
+    puts("malloc error");
+    return;
+  }
   unsank[numunsank]->x=x;
   unsank[numunsank]->y=y;
   unsank[numunsank]->ship=sh;
   numunsank++;
   set_board_crossy(SUSPECT,x,y);
+  printf("unsank[%d] is on %p\n", numunsank-1, unsank[numunsank-1]);
 }
 void clearunsank(){
-  int i=0;
-  while(unsank[i]){
+  int i;
+  for(i=0;i<numunsank;++i){
+    printf("set_board_around,i=%d\n", i);
     set_board_around(NOSHIP, unsank[i]->x, unsank[i]->y);
+  }
+  for(i=0;i<numunsank;++i){
+    printf("free, i=%d\n",i);
     free(unsank[i]);
-    ++i;
   }
   numunsank=0;
+}
+void judgedirection(){
+  if(numunsank<2)return;
+
+  int i,x,y;
+  for(i=0;i<numunsank;++i){
+    x=unsank[i]->x,y=unsank[i]->y;
+    if(unsank[0]->x == unsank[1]->x){//タテ
+      SET(NOSHIP, x-1, y-1);SET(NOSHIP, x-1, y);SET(NOSHIP, x-1, y+1);
+      SET(NOSHIP, x+1, y-1);SET(NOSHIP, x+1, y);SET(NOSHIP, x+1, y+1);
+    }else{                           //ヨコ   
+      SET(NOSHIP, x-1, y-1);SET(NOSHIP, x, y-1);SET(NOSHIP, x+1, y-1);
+      SET(NOSHIP, x-1, y+1);SET(NOSHIP, x, y+1);SET(NOSHIP, x+1, y+1);
+    }
+  }
 }
 
 void unsankmanage(){
   switch(enemy_board[cur_y+1][cur_x+1]){
   case BSHIP:
+    puts("\nBSHIP\n");
+    pushunsank(DSHIP, cur_x, cur_y);
+    if(numunsank==4){
+      puts("clearunsank");
+      clearunsank();
+    }
     break;
   case CSHIP:
-    //pushunsank(DSHIP, cur_x, cur_y);
+    puts("\nCSHIP\n");
+    pushunsank(CSHIP, cur_x, cur_y);
+    if(numunsank==2) judgedirection();
+    else if(numunsank==3){
+      puts("clearunsank");
+      clearunsank();
+    }
     break;
   case DSHIP:
-    //if(!aroundship(cur_x,cur_y))pushunsank(DSHIP, cur_x, cur_y);
-    // else clearunsank();
+    puts("\nDSHIP\n");
+    pushunsank(DSHIP, cur_x, cur_y);
+    if(numunsank==2){
+      puts("clearunsank");
+      clearunsank();
+    }
     break;
   default:
     return;
@@ -224,13 +306,8 @@ void record_result(int x,int y,char line[])
   else if(line[13]=='S')
   {
     //====kokokara====
-    int i,j;
-    for(i=-1;i<2;++i){
-      for(j=-1;j<2;++j){
-	if(enemy_board[y+1+i][x+1+j]==UNKNOWN)
-	  enemy_board[y+1+i][x+1+j] = NOSHIP;
-      }
-    }
+    set_board_around(NOSHIP, x, y);
+
     enemy_board[y+1][x+1]=SSHIP;
 
     //====kokomade====
@@ -270,7 +347,10 @@ void print_board(void){
       switch(enemy_board[iy][ix])
       {
         case UNKNOWN:
-          printf("U ");
+	  printf("U ");
+	  break; 
+        case SUSPECT:
+          printf("s ");
           break;
         case NOSHIP:
           printf("N ");

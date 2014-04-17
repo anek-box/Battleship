@@ -29,3 +29,40 @@ winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 55 roun
 winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 63 rounds, winner probably = ??
 winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 60 rounds, winner probably = ??
 winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 64 rounds, winner probably = ??
+winner = 4877842727, loser = 4877842727, rule = hit-all, reason = sunk all in 51 rounds, winner probably = ??
+winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 48 rounds, winner probably = ??
+winner = 4877842727, loser = 4877842727, rule = hit-all, reason = sunk all in 48 rounds, winner probably = ??
+winner = 4877842727, loser = sweep, rule = hit-all, reason = sunk all in 56 rounds, winner probably = ??
+winner = 4877842727, loser = 4877842727, rule = hit-all, reason = sunk all in 59 rounds, winner probably = ??
+winner = 4877842727, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 46 rounds, winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = ex6, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 37 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 37 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 32 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 44 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 43 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 42 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 38 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 32 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 36 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 34 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 35 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 34 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 41 rounds, winner probably = ??
+winner = 4877842727, loser = ex6, rule = hit-all, reason = sunk all in 45 rounds, winner probably = ??
+winner = 4877842727, loser = 9999999999, rule = hit-all, reason = sunk all in 31 rounds, winner probably = ??
+winner = 9999999999, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??
+winner = 9999999999, loser = 4877842727, rule = hit-all, reason = opponent died (no pipe), winner probably = ??

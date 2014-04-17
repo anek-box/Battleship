@@ -8,7 +8,7 @@ IF = ../master/
 
 #note that we just assume that client-side.o and util.o are up-to-date
 
-all: ex1 ex2 ex3 ex4 ex5 player
+all: ex1 ex2 ex3 ex4 ex5 player ex6 playerdash
 
 ex1:    ex1.o 
 	${CC} -o ex1 ex1.o ${IF}util.o ${IF}client-side.o
@@ -40,5 +40,15 @@ player: player.o
 player.o: player.c ${IF}redundant.h ${IF}util.o ${IF}client-side.o ${IF}public.h
 	${CC} -c player.c
 
+ex6: ex6.o 
+	${CC} -o ex6 ex6.o ${IF}util.o ${IF}client-side.o
+ex6.o: ex6.c ${IF}redundant.h ${IF}util.o ${IF}client-side.o ${IF}public.h
+	${CC} -c ex6.c
+
+playerdash: playerdash.o 
+	${CC} -o playerdash playerdash.o ${IF}util.o ${IF}client-side.o
+playerdash.o: playerdash.c ${IF}redundant.h ${IF}util.o ${IF}client-side.o ${IF}public.h
+	${CC} -c playerdash.c
+
 clean: 
-	rm *.o ex1 ex2 ex3 ex4 ex5 player
+	rm *.o ex1 ex2 ex3 ex4 ex5 player ex6 playerdash

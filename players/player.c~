@@ -6,6 +6,7 @@
 #include <public.h>
 
 const char MY_NAME[11] = "4877842727";
+char point = 5;
 const char DEPLOYMENT[61] = "Ba3a4a5a6 Cc1c2c3 Cc5c6c7 De1e2 De4e5 De7e8 Sg1 Sg3 Sg5 Sg7 ";
 
 enum ship {
@@ -18,13 +19,17 @@ enum ship {
   SSHIP
 };
 
-int cur_x,cur_y;
+
+int cur_x=0,cur_y=0;
 enum ship enemy_board[BD_SIZE+2][BD_SIZE+2];    // BD_SIZE is 9 (defined in public.h)
 
-int onboard(int x,int y){
-  if(x>=0 && y>=0 && x<BD_SIZE && y<BD_SIZE) return 1;
-  else return 0;
-}
+
+typedef struct{
+  char x;
+  char y;
+  enum ship size;
+
+}SHIP;
 
 
 void respond_with_name(void)
@@ -75,7 +80,7 @@ enemy_board[1][1]=enemy_board[1][2]=enemy_board[2][1]=enemy_board[BD_SIZE][BD_SI
 }
 
 int IsShipAround(int x, int y){
-  /* #define ISSHIP(x, y)  if(((x)>=0)&&((y)>=0)&&((x)<BD_SIZE)&&((y)<BD_SIZE)&&(!enemy_board[y][x]==ROCK)&&(!enemy_board[y][x]==NOSHIP)&&(!enemy_board[y][x]==UNKNOWN)) return 1 */
+  
 #define ISSHIP(x, y)  if(enemy_board[y+1][x+1]==SSHIP) return 1
 
   ISSHIP(x-1,y-1);ISSHIP(x,y-1);ISSHIP(x+1,y-1);
@@ -85,22 +90,33 @@ int IsShipAround(int x, int y){
   return 0;
 }
 
+void shotsalvo(int *retx, int *rety){
+  
+}
+void shotrattrap(int *retx, int *rety){
+  
+}
+void shotrandom(int *retx, int *rety){
+  int x,y;
+  while (TRUE)
+  {
+    x = rand() % BD_SIZE;
+    y = rand() % BD_SIZE;
+    
+    if(enemy_board[y+1][x+1]==UNKNOWN && !IsShipAround(x,y)) break;
+  }
+  *retx = x, *rety = y;
+}
+void (*shotfunc)(int*, int*)=shotrandom;
+
 
 void respond_with_shot(void)
 {
   char shot_string[MSG_LEN];
   int x, y;
   
-  while (TRUE)
-  {
-    x = rand() % BD_SIZE;
-    y = rand() % BD_SIZE;
-    //=====kokokara=====
-
-    if(enemy_board[y+1][x+1]==UNKNOWN && !IsShipAround(x,y)) break;
-
-    //=====kokomade=====
-  }
+  (*shotfunc)(&x, &y);
+  
   printf("%s shooting at %d%d ... ", MY_NAME, x, y);
   sprintf(shot_string, "%d%d", x, y);
   send_to_ref(shot_string);
@@ -175,7 +191,7 @@ void print_board(void){
     printf("%2d ", iy);
     for (ix = 0; ix < BD_SIZE + 2; ix++)
     {
-      switch(enemy_board[ix][iy])
+      switch(enemy_board[iy][ix])
       {
         case UNKNOWN:
           printf("U ");

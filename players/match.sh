@@ -2,5 +2,5 @@
 sleep 1
 ./player &
 sleep 1
-./playerdash &
+../sample/ta_inaba &
 

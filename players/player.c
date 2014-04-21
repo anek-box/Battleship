@@ -7,8 +7,12 @@
 #include <redundant.h>
 #include <public.h>
 
+#define DEBUG(a,b) printf(#a" is %d, "#b" is %d\n", (a), (b))
+
 const char MY_NAME[11] = "4877842727";
-const char DEPLOYMENT[61] = "Ba3a4a5a6 Cc1c2c3 Cc5c6c7 De1e2 De4e5 De7e8 Sg1 Sg3 Sg5 Sg7 ";
+//const char DEPLOYMENT[61] = "Ba3a4a5a6 Cc1c2c3 Cc5c6c7 De1e2 De4e5 De7e8 Sg1 Sg3 Sg5 Sg7 ";
+const char DEPLOYMENT[61] = "Bg2g3g4g5 Cc0c1c2 Ci2i3i4 Da2a3 Dd8e8 De0f0 Sa5 Sb7 Sg8 Si6 ";
+
 
 enum ship {
   UNKNOWN,
@@ -18,7 +22,9 @@ enum ship {
   CSHIP,
   DSHIP,
   SSHIP,
-  ROCK
+  ROCK,
+
+  OUTOFBOUND
 };
 enum direction{
   UNKNOWNDIR,
@@ -51,6 +57,21 @@ typedef struct{
 Unsank *unsank[4];
 int numunsank=0;
 
+int bsank[4][2]; int csank[2][3][2]; int dsank[3][2][2];
+int numbsank=0,numcsank=0,numdsank=0;
+
+enum{
+  BTRAP,
+  CTRAP,
+  DTRAP
+}mode = BTRAP;
+
+void (*shotfunc)(int*, int*);
+
+void shotrattrap(int *retx, int *rety);
+void shotsalvo(int *retx, int *rety);
+void shotrandom(int *retx, int *rety);
+void shotsuspect(int *retx, int *rety);
 
 
 
@@ -59,6 +80,11 @@ int numunsank=0;
     if(enemy_board[(c)+1][(b)+1] < a)enemy_board[(c)+1][(b)+1]=a;	\
   }while(0)    //横着したshipの配置。
 #define GET(a,b) enemy_board[(b)+1][(a)+1]
+enum ship get(int x, int y){
+  if(x>=0&&y>=0&&x<BD_SIZE&&y<BD_SIZE)return enemy_board[y+1][x+1];
+  else return OUTOFBOUND;
+}
+
 
 //指定マスの上下左右をｓｈにセットする
 void set_board_crossy(enum ship sh, int x, int y){
@@ -167,7 +193,7 @@ enemy_board[1][1]=enemy_board[1][2]=enemy_board[2][1]=enemy_board[BD_SIZE][BD_SI
 }
 
 void init_strategy(){
-  //shotfunc=shotsalvo;
+  shotfunc=shotsalvo;
 
   int i=rand()%8;  
   switch(i){
@@ -189,42 +215,63 @@ void init_strategy(){
 
 //●●●●●●●●●●●●●●●●ＳＨＯＴＰＡＴＴＥＲＮ●●●●●●●●●●●●●●●●●●
 
-void (*shotfunc)(int*, int*);
-
-void shotrattrap(int *retx, int *rety);
-void shotsalvo(int *retx, int *rety);
-void shotrandom(int *retx, int *rety);
-void shotsuspect(int *retx, int *rety);
-
 void shotsalvo(int *retx, int *rety){
-  int dx=(salvodirection>>1)%2 ? -1 : 1;
-  int dy=(salvodirection>>2)%2 ? -1 : 1;
-  int x = cur_x + dx*3;
-  int y = cur_y + dy*3;
+  static int lastsalvox=0;
+  static int lastsalvoy=0;
+  int x,y,dx,dy;
   static int salvocounter=0;
   int salvoindex;
-
-  if(GET(x,y)!=UNKNOWN)x+=1,y+=1;
-  if(x<0||y<0||x>=BD_SIZE||y>=BD_SIZE){
-    salvocounter+=3;
-    if(salvocounter>=12)shotfunc = shotrandom; 
-
-    salvoindex=(salvodirection+3)%8;
-    switch(salvoindex){
-    case 0: salvodirection=UPRIGHTLOWER;
-    case 1: salvodirection=UPRIGHTHIGHER;
-    case 2: salvodirection=UPLEFTLOWER;
-    case 3: salvodirection=UPLEFTHIGHER;
-    case 4: salvodirection=DOWNRIGHTLOWER;
-    case 5: salvodirection=DOWNRIGHTHIGHER;
-    case 6: salvodirection=DOWNLEFTLOWER;
-    case 7: salvodirection=DOWNLEFTHIGHER;
+  do{
+    dx=(salvodirection>>1)%2 ? -1 : 1;
+    dy=(salvodirection>>2)%2 ? -1 : 1;
+  
+    DEBUG(dx, dy);
+    if(lastsalvox==0 && lastsalvoy==0){
+      x = cur_x + dx*3;
+      y = cur_y + dy*3;
+    }else{
+      x = lastsalvox + dx*3;
+      y = lastsalvoy + dy*3;
     }
-  }
+    DEBUG(x,y);
+  
+    while(GET(x,y)!=UNKNOWN){
+      x+=2,y+=2;
+      if(x<0||y<0||x>=BD_SIZE||y>=BD_SIZE) break;
+    }
+  
+    if(x<0||y<0||x>=BD_SIZE||y>=BD_SIZE){
+      salvocounter+=3;
+      if(salvocounter>=18)shotfunc = shotrandom; 
+  
+      salvoindex=(salvodirection+3)%8;
+      switch(salvoindex){
+      case 0: salvodirection=UPRIGHTLOWER;lastsalvox=-1,lastsalvoy=-3;break;
+      case 1: salvodirection=UPRIGHTHIGHER;lastsalvox=-3,lastsalvoy=-1;break;
+      case 2: salvodirection=UPLEFTLOWER;lastsalvox=BD_SIZE,lastsalvoy=-3;break;
+      case 3: salvodirection=UPLEFTHIGHER;lastsalvox=BD_SIZE+2,lastsalvoy=-1;break;
+      case 4: salvodirection=DOWNRIGHTLOWER;lastsalvox=-3,lastsalvoy=BD_SIZE;break;
+      case 5: salvodirection=DOWNRIGHTHIGHER;lastsalvox=-1,lastsalvoy=BD_SIZE+2;break;
+      case 6: salvodirection=DOWNLEFTLOWER;lastsalvox=BD_SIZE+2,lastsalvoy=BD_SIZE;break;
+      case 7: salvodirection=DOWNLEFTHIGHER;lastsalvox=BD_SIZE,lastsalvoy=BD_SIZE+2;break;
+      }
+   
+    }
+  }while(GET(x,y)!=UNKNOWN||x<0||y<0||x>=BD_SIZE||y>=BD_SIZE);
+  lastsalvox=x, lastsalvoy=y;
   *retx=x, *rety=y;
 }
 void shotrattrap(int *retx, int *rety){
-  
+  int x,y;
+  while (TRUE)
+    {
+      x = rand() % BD_SIZE;
+      y = rand() % BD_SIZE;
+      
+      if(enemy_board[y+1][x+1]==UNKNOWN
+	 && (x+y)%2==0) break;
+    }
+  *retx = x, *rety = y;
 }
 void shotrandom(int *retx, int *rety){
   int x,y;
@@ -243,10 +290,13 @@ void shotsuspect(int *retx, int *rety){
   search_spiral(SUSPECT, 0, &j, &i);
   *retx=j;*rety=i;
 }
+void shotselect(){
+
+  if(mode==BTRAP&&numbsank==1)mode=CTRAP;
+  if(mode==CTRAP&&numcsank==2)mode=DTRAP;
+  if(shotfunc==shotrattrap&& mode==DTRAP&&numdsank==3)shotfunc = shotrandom;;
 
 
-void shotselecter(){
- 
 }
 
 void respond_with_shot(void)
@@ -256,11 +306,11 @@ void respond_with_shot(void)
 
   if(numunsank>0){shotsuspect(&x, &y);}
   else{
-    shotselecter();
+    shotselect();
     (*shotfunc)(&x, &y);  
   }
 
-  printf("\n-----\n  %d\n-----\n", salvodirection==UPLEFTHIGHER);
+  if(shotfunc==shotsalvo)printf("\n-----\n  %d\n-----\n", salvodirection);
 
   printf("%s shooting at %d%d ... ", MY_NAME, x, y);
   sprintf(shot_string, "%d%d", x, y);
@@ -286,13 +336,41 @@ void pushunsank(enum ship sh, int x, int y){
   printf("unsank[%d] is on %p\n", numunsank-1, unsank[numunsank-1]);
 }
 void clearunsank(){
+  printf("numunsank is %d\n", numunsank);
+  switch(numunsank){
+  case 2: //dsank
+    DEBUG(numdsank, numunsank);
+    dsank[numdsank][0][0]=unsank[0]->x,dsank[numdsank][0][1]=unsank[0]->y;
+    dsank[numdsank][1][0]=unsank[1]->x,dsank[numdsank][1][1]=unsank[1]->y;
+    numdsank++;
+    break;
+  case 3: //csank
+    DEBUG(numcsank, numunsank);
+    csank[numcsank][0][0]=unsank[0]->x,csank[numcsank][0][1]=unsank[0]->y;
+    csank[numcsank][1][0]=unsank[1]->x,csank[numcsank][1][1]=unsank[1]->y;
+    csank[numcsank][2][0]=unsank[2]->x,csank[numcsank][2][1]=unsank[2]->y;
+    numcsank++;
+    break;
+  case 4: //bsank
+    DEBUG(numbsank,numunsank);
+    bsank[0][0]=unsank[0]->x,bsank[0][1]=unsank[0]->y;
+    bsank[1][0]=unsank[1]->x,bsank[1][1]=unsank[1]->y;
+    bsank[2][0]=unsank[2]->x,bsank[2][1]=unsank[2]->y;
+    bsank[3][0]=unsank[3]->x,bsank[3][1]=unsank[3]->y;
+    numbsank++;
+    break;
+  default:
+    puts("INVALID NUMUNSANK");
+    return;
+  }
+
   int i;
   for(i=0;i<numunsank;++i){
-    printf("set_board_around,i=%d\n", i);
+    //printf("set_board_around,i=%d\n", i);
     set_board_around(NOSHIP, unsank[i]->x, unsank[i]->y);
   }
   for(i=0;i<numunsank;++i){
-    printf("free, i=%d\n",i);
+    //printf("free, i=%d\n",i);
     free(unsank[i]);
   }
   numunsank=0;
@@ -370,12 +448,32 @@ void record_result(int x,int y,char line[])
     //====kokokara====
     enemy_board[y+1][x+1] = BSHIP;
 
+    if(get(x-1, y)==NOSHIP&&
+       get(x+1,y)==UNKNOWN&&((get(x+2,y)!=UNKNOWN)||(get(x+2, y)==UNKNOWN&&get(x+3,y)!=UNKNOWN))) SET(NOSHIP,x+1,y);
+    else if(get(x+1, y)==NOSHIP&&
+       get(x-1,y)==UNKNOWN&&((get(x-2,y)!=UNKNOWN)||(get(x-2, y)==UNKNOWN&&get(x-3,y)!=UNKNOWN))) SET(NOSHIP,x-1,y);
+    else if(get(x-1,y)==UNKNOWN&&get(x+1,y)==UNKNOWN&&get(x-2,y)!=UNKNOWN&&get(x+2,y)!=UNKNOWN){SET(NOSHIP, x-1,y); SET(NOSHIP, x+1,y);}
+    if(get(x, y-1)==NOSHIP&&
+       get(x,y+1)==UNKNOWN&&((get(x,y+2)!=UNKNOWN)||(get(x, y+2)==UNKNOWN&&get(x,y+3)!=UNKNOWN))) SET(NOSHIP,x,y+1);
+    else if(get(x, y+1)==NOSHIP&&
+       get(x,y-1)==UNKNOWN&&((get(x,y-2)!=UNKNOWN)||(get(x, y-2)==UNKNOWN&&get(x,y-3)!=UNKNOWN))) SET(NOSHIP,x,y-1);
+    else if(get(x,y-1)==UNKNOWN&&get(x,y+1)==UNKNOWN&&get(x,y-2)!=UNKNOWN&&get(x,y+2)!=UNKNOWN){SET(NOSHIP, x,y-1); SET(NOSHIP, x,y+1);}
+
     //====kokomade====
   }
   else if(line[13]=='C')
   {
     //====kokokara====
     enemy_board[y+1][x+1]=CSHIP;
+
+    if(get(x-1,y)==NOSHIP&&get(x+1,y)==UNKNOWN&&get(x+2, y)!=UNKNOWN)
+      SET(NOSHIP, x+1, y);
+    else if(get(x-1,y)==UNKNOWN&&get(x+1,y)==NOSHIP&&get(x-2, y)!=UNKNOWN)
+      SET(NOSHIP, x-1, y);
+    if(get(x,y-1)==NOSHIP&&get(x,y+1)==UNKNOWN&&get(x, y+2)!=UNKNOWN)
+      SET(NOSHIP, x, y+1);
+    else if(get(x,y-1)==UNKNOWN&&get(x,y+1)==NOSHIP&&get(x, y+2)!=UNKNOWN)
+      SET(NOSHIP, x, y-1);
 
     //====kokomade====
   }
